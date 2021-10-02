@@ -2,10 +2,10 @@ from tkinter import *
 from tkinter.filedialog import *
 
 run = False
-size = 45
+size = 40
 field = []
 counter_step = 0
-
+step = 0
 
 class MyButton(Button):
     """ Create Button with some default values. """
@@ -33,10 +33,16 @@ def click_pause():
     if run:
         run = False
         pause['text'] = 'Старт'
+        step_btn['state'] = NORMAL
     else:
         run = True
         pause['text'] = 'Стоп'
+        step_btn['state'] = DISABLED
 
+def step_fun():
+    global step
+    step = 1
+    click_pause()
 
 def click_clear():
     for y in range(size):
@@ -71,7 +77,7 @@ def save_file():
 
 
 def out():
-    global counter_step
+    global counter_step, step
     auto_stop = True
     for y in range(size):
         for x in range(size):
@@ -80,9 +86,10 @@ def out():
                 auto_stop = False
             else:
                 field[y][x]['background'] = 'SystemButtonFace'
-    if auto_stop:
+    if auto_stop or step:
         if run:
             click_pause()
+            step = 0
 
     counter_step += 1
     count['text'] = counter_step
@@ -109,6 +116,7 @@ h = h - window_y // 2
 root.geometry('{}x{}+{}+{}'.format(window_x, window_y, w, h))
 
 pause = Button(root, text='Старт', command=click_pause)
+step_btn = Button(root, text='+1', command=step_fun)
 clear = Button(root, text='Очистить', command=click_clear)
 open_f = Button(root, text='Открыть', command=open_file)
 save_f = Button(root, text='Сохранить', command=save_file)
@@ -116,6 +124,7 @@ count = Label(text="0", fg='#FF0000', font="Arial 20")
 count_reset = Button(root, text='Сброс', command=count_reset_fun)
 
 pause.place(x=window_x - 90, y=50)
+step_btn.place(x=window_x - 40, y=50)
 clear.place(x=window_x - 90, y=100)
 open_f.place(x=window_x - 90, y=150)
 save_f.place(x=window_x - 90, y=200)
