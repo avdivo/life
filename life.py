@@ -1,11 +1,13 @@
 from tkinter import *
 from tkinter.filedialog import *
+from tkinter import messagebox as mb
 
 run = False
 size = 40
 field = []
 counter_step = 0
 step = 0
+
 
 class MyButton(Button):
     """ Create Button with some default values. """
@@ -39,10 +41,12 @@ def click_pause():
         pause['text'] = 'Стоп'
         step_btn['state'] = DISABLED
 
+
 def step_fun():
     global step
     step = 1
     click_pause()
+
 
 def click_clear():
     for y in range(size):
@@ -53,12 +57,13 @@ def click_clear():
 
 
 def open_file():
-    name_file = askopenfilename()
-    if name_file[len(name_file) - 5:] == '.life':
+    name_file = askopenfilename(filetypes=[("Life файл", "*.life")])
+    if name_file:
         with open(name_file, encoding='utf-8') as f:
             new = f.read().split(' ')
             del new[0]
             if len(new[0]) != size:
+                mb.showerror("Ошибка", "Не соответствует размер окна")
                 return
             for i in range(size):
                 field_shadow[i] = list(map(int, list(new[i])))
@@ -67,8 +72,10 @@ def open_file():
 
 
 def save_file():
-    name_file = asksaveasfilename() + '.life'
-    if name_file != '.life':
+    name_file = asksaveasfilename(filetypes=[("Life файл", "*.life")])
+    if name_file:
+        if name_file[len(name_file) - 5:] != '.life':
+            name_file += ' ({}).life.'.format(size)
         st = ''
         for y in field:
             st += ' ' + ''.join(map(lambda x: str(int(x['background'] != 'SystemButtonFace')), y))
