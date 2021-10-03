@@ -3,7 +3,8 @@ from tkinter.filedialog import *
 from tkinter import messagebox as mb
 
 run = False
-size = 40
+size_x = 80
+size_y = 40
 field = []
 counter_step = 0
 step = 0
@@ -54,8 +55,8 @@ def step_fun():
 
 
 def click_clear():
-    for y in range(size):
-        for x in range(size):
+    for y in range(size_y):
+        for x in range(size_x):
             field_shadow[y][x] = 0
     out()
     count_reset_fun()
@@ -67,10 +68,10 @@ def open_file():
         with open(name_file, encoding='utf-8') as f:
             new = f.read().split(' ')
             del new[0]
-            if len(new[0]) != size:
+            if len(new[0]) != size_x or len(new) != size_y:
                 mb.showerror("Ошибка", "Не соответствует размер окна")
                 return
-            for i in range(size):
+            for i in range(size_y):
                 field_shadow[i] = list(map(int, list(new[i])))
             out()
             count_reset_fun()
@@ -80,7 +81,7 @@ def save_file():
     name_file = asksaveasfilename(filetypes=[("Life файл", "*.life")])
     if name_file:
         if name_file[len(name_file) - 5:] != '.life':
-            name_file += ' ({}).life.'.format(size)
+            name_file += ' ({}x{}).life.'.format(size_x, size_y)
         st = ''
         for y in field:
             st += ' ' + ''.join(map(lambda x: str(int(x['background'] != 'SystemButtonFace')), y))
@@ -92,8 +93,8 @@ def out():
     global counter_step, step, counter_points
     auto_stop = True
     counter_points = 0
-    for y in range(size):
-        for x in range(size):
+    for y in range(size_y):
+        for x in range(size_x):
             if field_shadow[y][x]:
                 field[y][x]['background'] = '#FF0000'
                 counter_points += 1
@@ -118,8 +119,8 @@ def count_reset_fun():
 root = Tk()
 root.title("Жизнь")
 
-window_x = size * 12 + 120
-window_y = size * 12 + 20
+window_x = size_x * 12 + 120
+window_y = size_y * 12 + 20
 
 w = root.winfo_screenwidth()
 h = root.winfo_screenheight()
@@ -147,27 +148,27 @@ count.place(x=window_x - 90, y=200)
 count_reset.place(x=window_x - 90, y=240)
 count_point.place(x=window_x - 90, y=0)
 
-for y in range(size):
+for y in range(size_y):
     string = []
-    for x in range(size):
+    for x in range(size_x):
         b = MyButton(root)
         string.append(b)
         b.place(x=10 + x * 12, y=10 + y * 12, width=12, height=12)
     field.append(string)
-field_shadow = [[0 for x in range(size)] for y in range(size)]
+field_shadow = [[0 for x in range(size_x)] for y in range(size_y)]
 
 while True:
     if run:
-        for y in range(size):
-            for x in range(size):
+        for y in range(size_y):
+            for x in range(size_x):
                 neighbors = field[y][x - 1]['background'] == '#FF0000'
                 neighbors += field[y - 1][x - 1]['background'] == '#FF0000'
                 neighbors += field[y - 1][x]['background'] == '#FF0000'
-                neighbors += field[y - 1][(x + 1) % size]['background'] == '#FF0000'
-                neighbors += field[y][(x + 1) % size]['background'] == '#FF0000'
-                neighbors += field[(y + 1) % size][(x + 1) % size]['background'] == '#FF0000'
-                neighbors += field[(y + 1) % size][x]['background'] == '#FF0000'
-                neighbors += field[(y + 1) % size][x - 1]['background'] == '#FF0000'
+                neighbors += field[y - 1][(x + 1) % size_x]['background'] == '#FF0000'
+                neighbors += field[y][(x + 1) % size_x]['background'] == '#FF0000'
+                neighbors += field[(y + 1) % size_y][(x + 1) % size_x]['background'] == '#FF0000'
+                neighbors += field[(y + 1) % size_y][x]['background'] == '#FF0000'
+                neighbors += field[(y + 1) % size_y][x - 1]['background'] == '#FF0000'
 
                 life = False
                 if neighbors == 2 and field[y][x]['background'] == '#FF0000':
