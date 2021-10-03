@@ -7,7 +7,7 @@ size = 40
 field = []
 counter_step = 0
 step = 0
-
+counter_points = 0
 
 class MyButton(Button):
     """ Create Button with some default values. """
@@ -18,10 +18,15 @@ class MyButton(Button):
         super().__init__(*args, **kwargs)
 
     def click(self):
+        global counter_points
         if self['background'] == 'SystemButtonFace':
             self['background'] = '#FF0000'
+            counter_points += 1
         else:
             self['background'] = 'SystemButtonFace'
+            counter_points -= 1
+        count_point['text'] = counter_points
+
 
     def auto(self):
         if self['background'] == 'SystemButtonFace':
@@ -84,12 +89,14 @@ def save_file():
 
 
 def out():
-    global counter_step, step
+    global counter_step, step, counter_points
     auto_stop = True
+    counter_points = 0
     for y in range(size):
         for x in range(size):
             if field_shadow[y][x]:
                 field[y][x]['background'] = '#FF0000'
+                counter_points += 1
                 auto_stop = False
             else:
                 field[y][x]['background'] = 'SystemButtonFace'
@@ -100,7 +107,7 @@ def out():
 
     counter_step += 1
     count['text'] = counter_step
-
+    count_point['text'] = counter_points
 
 def count_reset_fun():
     global counter_step
@@ -129,14 +136,16 @@ open_f = Button(root, text='Открыть', command=open_file)
 save_f = Button(root, text='Сохранить', command=save_file)
 count = Label(text="0", fg='#FF0000', font="Arial 20")
 count_reset = Button(root, text='Сброс', command=count_reset_fun)
+count_point = Label(text="0", fg='#FF0000', font="Arial 20")
 
-pause.place(x=window_x - 90, y=50)
-step_btn.place(x=window_x - 40, y=50)
-clear.place(x=window_x - 90, y=100)
-open_f.place(x=window_x - 90, y=150)
-save_f.place(x=window_x - 90, y=200)
-count.place(x=window_x - 90, y=250)
-count_reset.place(x=window_x - 90, y=300)
+pause.place(x=window_x - 90, y=40)
+step_btn.place(x=window_x - 40, y=40)
+clear.place(x=window_x - 90, y=80)
+open_f.place(x=window_x - 90, y=120)
+save_f.place(x=window_x - 90, y=160)
+count.place(x=window_x - 90, y=200)
+count_reset.place(x=window_x - 90, y=240)
+count_point.place(x=window_x - 90, y=0)
 
 for y in range(size):
     string = []
