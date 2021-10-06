@@ -117,7 +117,6 @@ def out():
         count['text'] = counter_step
     print("--- %s seconds для OUT---" % (time.time() - start_time))
 
-
 # Кнопка Кнопка сброс счетчика шагов
 def count_reset_fun():
     global counter_step
@@ -165,7 +164,7 @@ count = Label(text="0", fg='#FF0000', font="Arial 20")
 count_reset = Button(root, text='Сброс', command=count_reset_fun)
 count_point = Label(text="0", fg='#FF0000', font="Arial 20")
 position_btn = Button(root, text='Позиции', command=position_fun)
-scale = Scale(root, from_=20, to=1, length=80, command=onScale)
+scale = Scale(root, from_=20, to=1, orient=HORIZONTAL, length=80, command=onScale)
 
 pause.place(x=w-110, y=40)
 step_btn.place(x=w-60, y=40)
@@ -187,14 +186,9 @@ for y in range(size_y):
     field.append(string)
 canv.pack(side="left", fill="both", expand=True)
 
-
 # Основной цикл
-def main():
-
-
-    # f = (time.time() - start_time1)
-    # if f > 0.1:
-    #     print("--- %s seconds TKINTER---" % (time.time() - start_time1))
+while True:
+    print("--- %s seconds TKINTER---" % (time.time() - start_time1))
     start_time = time.time()
     if run:
         for y in range(size_y):
@@ -217,15 +211,6 @@ def main():
                     # Клеточку необходимо переключить
                     change.put(field[y][x])  # Помещаем объект в очередь на переключение
         print("--- %s seconds ПОДГОТОВКА---" % (time.time() - start_time))
-        out()
-        canv.after(10, main)  # 2000-100*int(speed)
-        # start_time1 = time.time()
-        # canv.update_idletasks()
-        # canv.update()
-        # root.update_idletasks()
-        # root.update()
-
-# while True:
-main()
-print(' Я ТУТ ')
-root.mainloop()
+        root.after(2000-100*int(speed), out())
+    start_time1 = time.time()
+    root.update()
