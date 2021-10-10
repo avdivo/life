@@ -388,7 +388,6 @@ for y in range(size_y):
     field.append(string)
 
 # Кнопки и метки
-count_point = Label(sc, w - 110, 0, '0')
 start_stop_btn = Button(sc, w - 110, 40, 45, 25, 'Старт', click_pause)
 step_btn = Button(sc, w - 55, 40, 25, 25, '+1', step_fun)
 clear_btn = Button(sc, w - 110, 80, 70, 25, 'Очистить', click_clear)
@@ -403,6 +402,7 @@ speed_view = Label(sc, w - 85, 314, '0')
 speed_plus_btn = Button(sc, w - 40, 320, 20, 25, '>', speed_plus)
 
 palette = Palette(sc, w - 112, 400)
+count_point = Label(sc, w - 110, 540, '0')
 
 exit_btn = Button(sc, w - 110, 732, 70, 25, 'Выход', the_end)
 
