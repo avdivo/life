@@ -1,3 +1,17 @@
+# Общий алгоритм
+# 1. Выводим состояние клеточек из массива вывода на экран если в массиве что то есть.
+# В массиве вывода объекты, состояние которых должно быть изменено.
+# Перед выводом очищаем подготовительный массив и во время вывода в него заносим клеточки
+# которые активны и все их соседи. Текущий цвет их записываем в их прошлое (свойство old).
+# Массив типа set, поэтому объекты в него попадают только один раз.
+# 2. Вычисляем будущее состояние каждой клеточки в подготовительном массиве используя правила
+# переключения. При этом новое состояние записываем в текущее состояние, а при вычислении
+# используем их свойства old. Клеточки которые не были активными и не становятся - удаляются
+# из массива.
+# 3. Опрашиваем органы управления. При обнаружении переключения клеточки вносим изменения в массив
+# вывода, повторно запускаем п. 1 и 2. Ждем окончания итерации в цикле п.3
+# 4. Копируем подготовительный массив в массив вывода. Переходим к началу.
+
 import pygame
 import sys, time, queue, random
 from collections import Counter
@@ -14,6 +28,8 @@ step = 0
 counter_points = 0
 change = queue.Queue()  # Очередь изменений
 speed = 0  # Скорость. Задержка в секундах между кадрами
+repair = set()  # Массив для подготовки
+out = set()  # Массив для вывода
 userEvent = pygame.USEREVENT + 1  # Пользовательское событие возникает после нажатия кнопки
 
 
@@ -24,7 +40,8 @@ class Rectangle(object):
         self.x = x  # Горизонтальная координата сетки
         self.y = y  # Вертикальная координата сетки
         self.color = 6  # Цвет клетки (6 - нет цвета, остальные цвета как в Palette)
-        self.new_color = 6
+        self.old_color = 6
+        self.neighbors = set() # Соседи клеточки
 
         global size_points
         coords = (x * (size_points + 1) + 1, y * (size_points + 1) + 1,
@@ -46,12 +63,19 @@ class Rectangle(object):
         else:
             color = color_num
             counter_points += 1 if color != 6 else -1
-        pygame.draw.rect(self.sc, palette.colors[color], self.rect)
+            pygame.draw.rect(self.sc, palette.colors[color], self.rect)
         count_point.update_label(str(counter_points)) # Меняем общий счетчик клеточек
         palette.change_color(self.color, color)
         self.color = color
 
+    # Копирование состояния соседей в свойство для запоминания old_color
+    def update_old(self):
+        for cell in self.neighbors:
+            cell.old_color = cell.color
 
+    # Список состояний соседей свойства old_color
+    def status_old(self):
+        return list(old for old in self.neighbors)
 
 class Button():
     # Класс кнопка. Выполняет функцию заданную при нажатии. Помнит все свои кнопки. После нажатия
@@ -347,21 +371,46 @@ def the_end():
     sys.exit()
 
 
-# Вывод изменений из массива на поле
-def out():
-    global counter_step, step
-    auto_stop = True
-    while not change.empty():
-        cell = change.get()
-        cell.change_color(cell.new_color)
-        auto_stop = False
-    if auto_stop or step:
-        if run:
-            click_pause()
-            step = 0
-    else:
-        counter_step += 1
-        count.update_label(str(counter_step))
+# Вывод изменений из массива на поле и занесение клеточек в которых могут быть изменения
+# в массив для проверки
+def out_and_rerair():
+    repair.clear()
+    for cell in out:
+        if cell.old_color != cell.color:
+            cell.old_color = cell.color # Запоминаем состояние клеточки
+            cell.change_color(cell.color)
+        if cell.color != 6:
+            cell.update_old()  # Запоминаем состояние соседей
+            repair.update(cell.neighbors)  # Добавляем соседей для проверки
+            repair.add(cell)  # Добавляем клеточку для проверки
+
+
+# Обработка массива repair. Переключение ячеек в соответствии с правилами
+# Удаление клеточек которые не переключаются
+def switching():
+    del_cell = set()  # Кандидаты на удаление
+    for cell in repair:
+        neighbors = Counter(cell.status_old())
+        del neighbors[6]  # Удаляем количество пустых клеток вокруг исследуемой
+        count_neighbors = sum(neighbors.values())  # Клеточек вокруг заполнено
+
+        if count_neighbors == 3 and cell.old_color == 6:
+            # Появление новой клеточки
+            if max(neighbors.values()) == 1:
+                # Клеточки все разных цветов, родитель случайный из них
+                cell.color = random.choice(tuple(neighbors.keys()))
+            else:
+                # 2 или 3 клеточки одинаковые, родитель по большинству
+                cell.color = max(neighbors, key=neighbors.get)
+        else:
+            if field[y][x].color < 6 and (count_neighbors < 2 or count_neighbors > 3):
+                # Удаление клеточки
+                cell.color = 6
+        if cell.old_color == cell.color:
+            # Состояние клеточки не меняется, не обрабатываем ее
+            del_cell.add(cell)
+    repair.difference_update(del_cell)  # Удаляем из обработки клеточки не изменившиеся
+
 
 
 # Инициализация
@@ -386,6 +435,18 @@ for y in range(size_y):
     for x in range(size_x):
         string.append(Rectangle(sc, x, y))
     field.append(string)
+
+# Запись в свойства каждой клеточки ее соседей
+for y in range(size_y):
+    for x in range(size_x):
+        field[y][x].neighbors.add(field[y][x - 1])
+        field[y][x].neighbors.add(field[y - 1][x - 1])
+        field[y][x].neighbors.add(field[y - 1][x])
+        field[y][x].neighbors.add(field[y - 1][(x + 1) % size_x])
+        field[y][x].neighbors.add(field[y][(x + 1) % size_x])
+        field[y][x].neighbors.add(field[(y + 1) % size_y][(x + 1) % size_x])
+        field[y][x].neighbors.add(field[(y + 1) % size_y][x])
+        field[y][x].neighbors.add(field[(y + 1) % size_y][x - 1])
 
 # Кнопки и метки
 start_stop_btn = Button(sc, w - 110, 40, 45, 25, 'Старт', click_pause)
@@ -413,49 +474,8 @@ pygame.display.update()
 while 1:
     stat_time = time.time()
     if run:
-        # t1 = time.time()
-        for y in range(size_y):
-            for x in range(size_x):
-                neighbors = []
-                neighbors.append(field[y][x - 1].color)
-                neighbors.append(field[y - 1][x - 1].color)
-                neighbors.append(field[y - 1][x].color)
-                neighbors.append(field[y - 1][(x + 1) % size_x].color)
-                neighbors.append(field[y][(x + 1) % size_x].color)
-                neighbors.append(field[(y + 1) % size_y][(x + 1) % size_x].color)
-                neighbors.append(field[(y + 1) % size_y][x].color)
-                neighbors.append(field[(y + 1) % size_y][x - 1].color)
-
-                neighbors = Counter(neighbors)
-                del neighbors[6] # Удаляем количество пустых клеток вокруг исследуемой
-                count_neighbors = sum(neighbors.values()) # Клеточек вокруг заполнено
-
-                if count_neighbors == 3 and field[y][x].color == 6:
-                    # Появление новой клеточки
-                    if max(neighbors.values()) == 1:
-                        # Клеточки все разных цветов, родитель случайный из них
-                        field[y][x].new_color = random.choice(tuple(neighbors.keys()))
-                    else:
-                        # 2 или 3 клеточки одинаковые, родитель по большинству
-                        field[y][x].new_color = max(neighbors, key=neighbors.get)
-                    change.put(field[y][x])  # Помещаем объект в очередь на переключение
-                else:
-                    if field[y][x].color < 6 and (count_neighbors < 2 or count_neighbors > 3):
-                        # Удаление клеточки
-                        field[y][x].new_color = 6
-                        change.put(field[y][x])  # Помещаем объект в очередь на переключение
-
-        # print(time.time() - t1)
-
-        # Добавление случайностей
-        if random.randint(0, 100) < 10:
-            color = random.randint(0, 6)
-            new_x = random.randint(0, size_x - 1)
-            new_y = random.randint(0, size_y - 1)
-            field[new_y][new_x].new_color = color
-            change.put(field[new_y][new_x])  # Помещаем объект в очередь на переключение
-
-        out()
+        out_and_rerair()
+        switching()
 
     do = True
     while do:
@@ -473,6 +493,9 @@ while 1:
                     y = event.pos[1] // (size_points + 1) if event.pos[1] % (size_points + 1) else 1000
                     if x < size_x and y < size_y:
                         field[y][x].change_color()
+                        out.add(field[y][x])
+                        out_and_rerair()
+
                     # По клеткам не щелкали, проверяем не по кнопкам ли
                     elif not Button.isPress(event.pos):
                         # Не по кнопкам, проверяем палитру
