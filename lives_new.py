@@ -49,33 +49,24 @@ class Rectangle(object):
         self.sc = sc
         self.rect = pygame.draw.rect(sc, self.color_1, coords)
 
-    # Переключение клеточки
-    def change_color(self, color_num=-1):
-        global counter_points
-        if color_num == -1:
-            color_num = palette.activ_rect.color_num
-            if self.color == color_num:
-                color = 6
-                counter_points -= 1
-            else:
-                color = palette.activ_rect.color_num
-                counter_points += 1 if self.color == 6 else 0
-        else:
-            color = color_num
-            counter_points += 1 if color != 6 else -1
-            pygame.draw.rect(self.sc, palette.colors[color], self.rect)
-        count_point.update_label(str(counter_points)) # Меняем общий счетчик клеточек
-        palette.change_color(self.color, color)
-        self.color = color
+    # Переключение клеточки при щелчке. Цвет из палитры
+    def change_color(self):
+        self.color = 6 if self.color == palette.activ_rect.color_num else palette.activ_rect.color_num
 
-    # Копирование состояния соседей в свойство для запоминания old_color
-    def update_old(self):
-        for cell in self.neighbors:
-            cell.old_color = cell.color
+
+    # Рисование клеточки
+    def show_cell(self):
+        global counter_points
+        palette.change_color(self.old_color, self.color)  # Меняем счетчик в палитре
+        self.old_color = self.color
+        counter_points += 1 if self.color != 6 else -1
+        pygame.draw.rect(self.sc, palette.colors[self.color], self.rect)
+        count_point.update_label(str(counter_points))  # Меняем общий счетчик клеточек
+
 
     # Список состояний соседей свойства old_color
     def status_old(self):
-        return list(old for old in self.neighbors)
+        return list(old.old_color for old in self.neighbors)
 
 class Button():
     # Класс кнопка. Выполняет функцию заданную при нажатии. Помнит все свои кнопки. После нажатия
@@ -260,6 +251,7 @@ def click_pause():
         run = True
         step_btn.dis(True)
         start_stop_btn.cange_text('Стоп')
+        prestart()
 
 
 # Кнопка 1 шаг
@@ -276,10 +268,8 @@ def click_clear():
     for y in range(size_y):
         for x in range(size_x):
             if field[y][x].color < 6:
-                field[y][x].new_color = 6
-                change.put(field[y][x])
-    out()
-    count_reset_fun()
+                field[y][x].color = 6
+                field[y][x].show_cell()
 
 
 # Кнопка Открыть
@@ -303,10 +293,8 @@ def open_file():
             color = list(color)
             click_clear()
             for i in range(len(color)):
-                field[int(new[i*2 + 1])][int(new[i*2])].new_color = int(color[i])
-                change.put(field[int(new[i*2 + 1])][int(new[i*2])])
-        out()
-        count_reset_fun()
+                field[int(new[i*2 + 1])][int(new[i*2])].color = int(color[i])
+                field[int(new[i * 2 + 1])][int(new[i * 2])].show_cell()
 
 
 # Кнопка Сохранить.
@@ -371,24 +359,45 @@ def the_end():
     sys.exit()
 
 
+# Перед запуском Проходит по всему полю и готовит массив repair
+# записывая в него активные клетки и их соседей
+def prestart():
+    repair.clear()
+    out.clear()
+    for y in range(size_y):
+        for x in range(size_x):
+            if field[y][x].color < 6:
+                repair.update(field[y][x].neighbors)  # Добавляем соседей для проверки
+                repair.add(field[y][x])  # Добавляем клеточку для проверки
+    switching()
+
+
 # Вывод изменений из массива на поле и занесение клеточек в которых могут быть изменения
 # в массив для проверки
 def out_and_rerair():
-    repair.clear()
+    global counter_step, step
+    auto_stop = True
     for cell in out:
         if cell.old_color != cell.color:
-            cell.old_color = cell.color # Запоминаем состояние клеточки
-            cell.change_color(cell.color)
-        if cell.color != 6:
-            cell.update_old()  # Запоминаем состояние соседей
+            cell.show_cell()
             repair.update(cell.neighbors)  # Добавляем соседей для проверки
             repair.add(cell)  # Добавляем клеточку для проверки
+            auto_stop = False
+    out.clear()
+    if auto_stop or step:
+        if run:
+            click_pause()
+            step = 0
+    else:
+        counter_step += 1
+        count.update_label(str(counter_step))
 
 
 # Обработка массива repair. Переключение ячеек в соответствии с правилами
 # Удаление клеточек которые не переключаются
 def switching():
     del_cell = set()  # Кандидаты на удаление
+    global out
     for cell in repair:
         neighbors = Counter(cell.status_old())
         del neighbors[6]  # Удаляем количество пустых клеток вокруг исследуемой
@@ -403,14 +412,15 @@ def switching():
                 # 2 или 3 клеточки одинаковые, родитель по большинству
                 cell.color = max(neighbors, key=neighbors.get)
         else:
-            if field[y][x].color < 6 and (count_neighbors < 2 or count_neighbors > 3):
+            if cell.color < 6 and (count_neighbors < 2 or count_neighbors > 3):
                 # Удаление клеточки
                 cell.color = 6
         if cell.old_color == cell.color:
             # Состояние клеточки не меняется, не обрабатываем ее
             del_cell.add(cell)
     repair.difference_update(del_cell)  # Удаляем из обработки клеточки не изменившиеся
-
+    out = repair.copy()
+    repair.clear()
 
 
 # Инициализация
@@ -493,8 +503,8 @@ while 1:
                     y = event.pos[1] // (size_points + 1) if event.pos[1] % (size_points + 1) else 1000
                     if x < size_x and y < size_y:
                         field[y][x].change_color()
-                        out.add(field[y][x])
-                        out_and_rerair()
+                        field[y][x].show_cell()
+                        # prestart()
 
                     # По клеткам не щелкали, проверяем не по кнопкам ли
                     elif not Button.isPress(event.pos):
