@@ -447,14 +447,6 @@ while 1:
 
         # print(time.time() - t1)
 
-        # Добавление случайностей
-        if random.randint(0, 100) < 10:
-            color = random.randint(0, 6)
-            new_x = random.randint(0, size_x - 1)
-            new_y = random.randint(0, size_y - 1)
-            field[new_y][new_x].new_color = color
-            change.put(field[new_y][new_x])  # Помещаем объект в очередь на переключение
-
         out()
 
     do = True

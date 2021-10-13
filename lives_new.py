@@ -68,6 +68,13 @@ class Rectangle(object):
     def status_old(self):
         return list(old.old_color for old in self.neighbors)
 
+
+    # Приводим состояние соседей в положение как до старта и возвращяем их список
+    def cast_neighbors(self):
+        for cell in self.neighbors:
+            cell.old_color = cell.color
+        return self.neighbors
+
 class Button():
     # Класс кнопка. Выполняет функцию заданную при нажатии. Помнит все свои кнопки. После нажатия
     # кнопки подсвечивает ее, устанавливает событие, которое запускает функцию погашения подсветки
@@ -145,11 +152,11 @@ class Label():
         self.y = y
         self.font_size = 33
         self.color = (255, 0, 0)
+        self.f1 = pygame.font.SysFont('arial', self.font_size)
         self.write_label()
 
     def write_label(self):
-        f1 = pygame.font.SysFont('arial', self.font_size)
-        self.surface = f1.render(self.text, True, self.color)
+        self.surface = self.f1.render(self.text, True, self.color)
         self.sc.blit(self.surface, (self.x, self.y))
 
     def clear_label(self):
@@ -215,6 +222,8 @@ class Palette():
             self.sc = sc
             self.count = 0 # Количество клеточек этого цвета
             self.self_up = self_up # Объект выше (этот класс вложенный)
+            self.font = pygame.font.SysFont('arial', 18)
+
 
         def draw_cell(self):
             # Принимает объект rect, закрашивает внутреннюю часть с отступом
@@ -223,9 +232,8 @@ class Palette():
 
         def write_cell(self):
             # Вписывает количество клеточек такого цвета
-            font = pygame.font.SysFont('arial', 18)
             color = (0, 0, 0) if self.color in ((255, 255, 255), (255, 255, 0), (0, 255, 0)) else (255, 255, 255)
-            text = font.render(str(self.count), 1, color)
+            text = self.font.render(str(self.count), 1, color)
             self.sc.blit(text,
                          (self.rect.x + (self.rect.width / 2 - text.get_width() / 2),
                           self.rect.y + (self.rect.height / 2 - text.get_height() / 2)))
@@ -265,12 +273,15 @@ def step_fun():
 
 # Кнопка Очистка
 def click_clear():
+    global counter_points
     for y in range(size_y):
         for x in range(size_x):
-            if field[y][x].color < 6:
+            if field[y][x].color < 6 or field[y][x].old_color < 6:
                 field[y][x].color = 6
                 field[y][x].show_cell()
-
+    counter_points = 0
+    count_point.update_label(str(counter_points))
+    count_reset_fun()
 
 # Кнопка Открыть
 def open_file():
@@ -367,7 +378,8 @@ def prestart():
     for y in range(size_y):
         for x in range(size_x):
             if field[y][x].color < 6:
-                repair.update(field[y][x].neighbors)  # Добавляем соседей для проверки
+                repair.update(field[y][x].cast_neighbors())  # Добавляем соседей для проверки
+                field[y][x].old_color = field[y][x].color
                 repair.add(field[y][x])  # Добавляем клеточку для проверки
     switching()
 
@@ -482,7 +494,7 @@ exit_btn = Button(sc, w - 110, 732, 70, 25, 'Выход', the_end)
 pygame.display.update()
 
 while 1:
-    stat_time = time.time()
+    start_time = time.time()
     if run:
         out_and_rerair()
         switching()
@@ -504,7 +516,7 @@ while 1:
                     if x < size_x and y < size_y:
                         field[y][x].change_color()
                         field[y][x].show_cell()
-                        # prestart()
+
 
                     # По клеткам не щелкали, проверяем не по кнопкам ли
                     elif not Button.isPress(event.pos):
@@ -515,6 +527,6 @@ while 1:
             elif event.type == userEvent:
                 Button.button_press(0)
 
-        do = stat_time + speed / 10 > time.time()
+        do = start_time + speed / 10 > time.time()
 
         pygame.display.update()
