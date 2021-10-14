@@ -41,7 +41,7 @@ class Rectangle(object):
         self.y = y  # Вертикальная координата сетки
         self.color = 6  # Цвет клетки (6 - нет цвета, остальные цвета как в Palette)
         self.old_color = 6
-        self.neighbors = set() # Соседи клеточки
+        self.neighbors = set()  # Соседи клеточки
 
         global size_points
         coords = (x * (size_points + 1) + 1, y * (size_points + 1) + 1,
@@ -53,7 +53,6 @@ class Rectangle(object):
     def change_color(self):
         self.color = 6 if self.color == palette.activ_rect.color_num else palette.activ_rect.color_num
 
-
     # Рисование клеточки
     def show_cell(self):
         global counter_points
@@ -63,17 +62,16 @@ class Rectangle(object):
         pygame.draw.rect(self.sc, palette.colors[self.color], self.rect)
         count_point.update_label(str(counter_points))  # Меняем общий счетчик клеточек
 
-
     # Список состояний соседей свойства old_color
     def status_old(self):
         return list(old.old_color for old in self.neighbors)
-
 
     # Приводим состояние соседей в положение как до старта и возвращяем их список
     def cast_neighbors(self):
         for cell in self.neighbors:
             cell.old_color = cell.color
         return self.neighbors
+
 
 class Button():
     # Класс кнопка. Выполняет функцию заданную при нажатии. Помнит все свои кнопки. После нажатия
@@ -175,23 +173,24 @@ class Palette():
 
     def __init__(self, sc, x, y):
         # Цвета: 0 - черный, 1 - белый, 2 - желтый, 3 - красный, 4 - зеленый, 5 - синий
-        self.colors = ((0, 0, 0), (255, 255, 255), (255, 255, 0), (255, 0, 0), (0, 255, 0), (0, 0, 255), (100, 100, 100))
-        self.x = x # Координаты палитры по горизонтали
-        self.y = y # Координаты палитры по вертикали
-        self.width = 45 # Ширина клеточки с рамкой
-        self.height = 30 # Высота клеточки с рамкой
-        self.gap = 4 # Расстояние между клеточками
-        self.cells = [] # Объекты клеток
-        r = pygame.draw.rect(sc, (255, 255, 255), (self.x, self.y, self.width*2+self.gap, self.height), 1)
-        self.activ_rect = self.Cell(self, sc, r, 3) # Объект с rect и цветом
+        self.colors = (
+            (0, 0, 0), (255, 255, 255), (255, 255, 0), (255, 0, 0), (0, 255, 0), (0, 0, 255), (100, 100, 100))
+        self.x = x  # Координаты палитры по горизонтали
+        self.y = y  # Координаты палитры по вертикали
+        self.width = 45  # Ширина клеточки с рамкой
+        self.height = 30  # Высота клеточки с рамкой
+        self.gap = 4  # Расстояние между клеточками
+        self.cells = []  # Объекты клеток
+        r = pygame.draw.rect(sc, (255, 255, 255), (self.x, self.y, self.width * 2 + self.gap, self.height), 1)
+        self.activ_rect = self.Cell(self, sc, r, 3)  # Объект с rect и цветом
         self.activ_rect.draw_cell()
 
         for i in range(6):
-            y = self.y + (self.height + self.gap) * ((i+2)//2)
-            x = self.x + (self.width + self.gap) * (i%2)
-            r = pygame.draw.rect(sc, (255, 255, 255), (x, y, self.width, self.height), 1) # Объект Rect клетки цвета
+            y = self.y + (self.height + self.gap) * ((i + 2) // 2)
+            x = self.x + (self.width + self.gap) * (i % 2)
+            r = pygame.draw.rect(sc, (255, 255, 255), (x, y, self.width, self.height), 1)  # Объект Rect клетки цвета
             new_cell = self.Cell(self, sc, r, i)
-            self.cells.append(new_cell) # Объект с rect и цветом
+            self.cells.append(new_cell)  # Объект с rect и цветом
             new_cell.draw_cell()
             new_cell.write_cell()
 
@@ -220,10 +219,9 @@ class Palette():
             self.color = self_up.colors[color_num]
             self.color_num = color_num
             self.sc = sc
-            self.count = 0 # Количество клеточек этого цвета
-            self.self_up = self_up # Объект выше (этот класс вложенный)
+            self.count = 0  # Количество клеточек этого цвета
+            self.self_up = self_up  # Объект выше (этот класс вложенный)
             self.font = pygame.font.SysFont('arial', 18)
-
 
         def draw_cell(self):
             # Принимает объект rect, закрашивает внутреннюю часть с отступом
@@ -283,6 +281,7 @@ def click_clear():
     count_point.update_label(str(counter_points))
     count_reset_fun()
 
+
 # Кнопка Открыть
 def open_file():
     root = Tk()
@@ -304,7 +303,7 @@ def open_file():
             color = list(color)
             click_clear()
             for i in range(len(color)):
-                field[int(new[i*2 + 1])][int(new[i*2])].color = int(color[i])
+                field[int(new[i * 2 + 1])][int(new[i * 2])].color = int(color[i])
                 field[int(new[i * 2 + 1])][int(new[i * 2])].show_cell()
 
 
@@ -382,7 +381,6 @@ def prestart():
                 repair.update(field[y][x].cast_neighbors())  # Добавляем соседей для проверки
                 field[y][x].old_color = field[y][x].color
                 repair.add(field[y][x])  # Добавляем клеточку для проверки
-    # switching()
 
 
 # Вывод изменений из массива на поле и занесение клеточек в которых могут быть изменения
@@ -491,7 +489,6 @@ palette = Palette(sc, w - 112, 400)
 count_point = Label(sc, w - 110, 540, '0')
 
 exit_btn = Button(sc, w - 110, 732, 70, 25, 'Выход', the_end)
-
 
 # обновляем окно
 pygame.display.update()
