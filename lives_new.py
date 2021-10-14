@@ -276,7 +276,7 @@ def click_clear():
     global counter_points
     for y in range(size_y):
         for x in range(size_x):
-            if field[y][x].color < 6 or field[y][x].old_color < 6:
+            if field[y][x].color < 6:
                 field[y][x].color = 6
                 field[y][x].show_cell()
     counter_points = 0
@@ -346,6 +346,7 @@ def position_fun():
            (size_x // 4, size_y // 4 * 3), (size_x // 4 * 3, size_y // 4 * 3))
     for i in pos:
         field[i[1]][i[0]].change_color()
+        field[i[1]][i[0]].show_cell()
 
 
 # Кнопка уменьшения скорости
@@ -381,7 +382,7 @@ def prestart():
                 repair.update(field[y][x].cast_neighbors())  # Добавляем соседей для проверки
                 field[y][x].old_color = field[y][x].color
                 repair.add(field[y][x])  # Добавляем клеточку для проверки
-    switching()
+    # switching()
 
 
 # Вывод изменений из массива на поле и занесение клеточек в которых могут быть изменения
@@ -408,8 +409,10 @@ def out_and_rerair():
 # Обработка массива repair. Переключение ячеек в соответствии с правилами
 # Удаление клеточек которые не переключаются
 def switching():
+    global out, run
+    if not run:
+        return
     del_cell = set()  # Кандидаты на удаление
-    global out
     for cell in repair:
         neighbors = Counter(cell.status_old())
         del neighbors[6]  # Удаляем количество пустых клеток вокруг исследуемой
@@ -497,7 +500,6 @@ while 1:
     start_time = time.time()
     if run:
         out_and_rerair()
-        switching()
 
     do = True
     while do:
@@ -516,7 +518,7 @@ while 1:
                     if x < size_x and y < size_y:
                         field[y][x].change_color()
                         field[y][x].show_cell()
-
+                        prestart()
 
                     # По клеткам не щелкали, проверяем не по кнопкам ли
                     elif not Button.isPress(event.pos):
@@ -527,6 +529,8 @@ while 1:
             elif event.type == userEvent:
                 Button.button_press(0)
 
-        do = start_time + speed / 10 > time.time()
+        do = 0 if step else start_time + speed / 10 > time.time()
 
         pygame.display.update()
+
+    switching()
